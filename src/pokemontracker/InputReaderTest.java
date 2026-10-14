@@ -1,311 +1,282 @@
 package pokemontracker;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
+
 /**
- * This is a test class for the InputReader class. Each test feeds the
- * reader a string instead of the keyboard, like "abc\n5\n", and
- * captures what it prints.
+ * This is the test class for InputReader. Each test gives the reader
+ * fake keyboard input, like "abc\n5\n", instead of the real keyboard.
  *
  * @author Fernando Zuniga Leon (zfernando)
  * @version 2026.10.14
  */
-public class InputReaderTest
-    extends student.TestCase
-{
-    //~ Fields ................................................................
-    private java.io.ByteArrayOutputStream printed;
+public class InputReaderTest {
 
-    //~ Constructor ...........................................................
-    // ----------------------------------------------------------
-    /**
-     * Creates a new InputReaderTest test object.
-     */
-    public InputReaderTest()
-    {
-        // The constructor is usually empty in unit tests, since it runs
-        // once for the whole class, not once for each test method.
-        // Per-test initialization should be placed in setUp() instead.
+    static int passed = 0;
+    static int failed = 0;
+
+    public static void main(String[] args) {
+        testConstructor_normal();
+        testConstructor_null();
+        testReadName_normal();
+        testReadName_trimsSpaces();
+        testReadName_specialCharacters();
+        testReadName_blank();
+        testReadName_tooLong();
+        testReadName_inputEnds();
+        testReadInt_normal();
+        testReadInt_edges();
+        testReadInt_lettersAndNegative();
+        testReadInt_zeroAndHuge();
+        testReadInt_badRange();
+        testReadInt_inputEnds();
+        testReadRarity_normal();
+        testReadRarity_outOfRange();
+        testReadEnergyType_normal();
+        testReadEnergyType_word();
+        testHasMoreInput_normal();
+        testHasMoreInput_empty();
+
+        System.out.println("\n" + passed + " passed, " + failed + " failed");
     }
 
-    //~ Methods ...............................................................
-    // ----------------------------------------------------------
-    /**
-     * Sets up the test fixture.
-     * Called before every test case method.
-     */
-    public void setUp()
-    {
-        printed = new java.io.ByteArrayOutputStream();
+    // Normal: a reader with input says it has more input
+    static void testConstructor_normal() {
+        InputReader reader = createReader("hi\n", new ByteArrayOutputStream());
+
+        check("constructor - normal", reader.hasMoreInput());
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Makes a reader whose "keyboard" is the given text.
-     *
-     * @param text the lines the fake user types
-     * @return a reader over that text
-     */
-    private InputReader readerFor(String text)
-    {
-        return new InputReader(new java.util.Scanner(text),
-            new java.io.PrintStream(printed));
-    }
-
-    // ----------------------------------------------------------
-    /**
-     * Tests that the constructor creates a reader that can read input.
-     */
-    public void testConstructor()
-    {
-        InputReader reader = readerFor("hi\n");
-        assertTrue(reader.hasMoreInput());
-    }
-
-    // ----------------------------------------------------------
-    /**
-     * Tests that the constructor rejects a null scanner.
-     */
-    public void testConstructorNullScanner()
-    {
-        Exception thrown = null;
-        try
-        {
+    // Bad input: null scanner or null output -> IllegalArgumentException
+    static void testConstructor_null() {
+        boolean nullScannerThrew = false;
+        try {
             new InputReader(null);
         }
-        catch (Exception e)
-        {
-            thrown = e;
+        catch (IllegalArgumentException e) {
+            nullScannerThrew = true;
         }
-        assertTrue(thrown instanceof IllegalArgumentException);
-    }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that the constructor rejects a null output stream.
-     */
-    public void testConstructorNullOutput()
-    {
-        Exception thrown = null;
-        try
-        {
-            new InputReader(new java.util.Scanner(""), null);
+        boolean nullOutputThrew = false;
+        try {
+            new InputReader(new Scanner(""), null);
         }
-        catch (Exception e)
-        {
-            thrown = e;
+        catch (IllegalArgumentException e) {
+            nullOutputThrew = true;
         }
-        assertTrue(thrown instanceof IllegalArgumentException);
+
+        check("constructor - null", nullScannerThrew && nullOutputThrew);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readName returns a normal name.
-     */
-    public void testReadName()
-    {
-        assertEquals("Pikachu", readerFor("Pikachu\n").readName("> "));
+    // Normal: "Pikachu" -> "Pikachu"
+    static void testReadName_normal() {
+        InputReader reader =
+            createReader("Pikachu\n", new ByteArrayOutputStream());
+
+        check("readName - normal",
+            reader.readName("> ").equals("Pikachu"));
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readName trims extra spaces off the name.
-     */
-    public void testReadNameTrimsSpaces()
-    {
-        assertEquals("Pikachu",
-            readerFor("   Pikachu  \n").readName("> "));
+    // Normal: "   Pikachu  " -> "Pikachu"
+    static void testReadName_trimsSpaces() {
+        InputReader reader =
+            createReader("   Pikachu  \n", new ByteArrayOutputStream());
+
+        check("readName - trims spaces",
+            reader.readName("> ").equals("Pikachu"));
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readName accepts names with unusual characters.
-     */
-    public void testReadNameSpecialCharacters()
-    {
-        assertEquals("Farfetch'd",
-            readerFor("Farfetch'd\n").readName("> "));
-        assertEquals("Mr. Mime", readerFor("Mr. Mime\n").readName("> "));
+    // Normal: real card names with odd characters are accepted
+    static void testReadName_specialCharacters() {
+        InputReader reader = createReader(
+            "Farfetch'd\nMr. Mime\n", new ByteArrayOutputStream());
+
+        boolean correct =
+            reader.readName("> ").equals("Farfetch'd")
+            && reader.readName("> ").equals("Mr. Mime");
+
+        check("readName - special characters", correct);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readName rejects a blank name and asks again.
-     */
-    public void testReadNameBlankThenValid()
-    {
-        assertEquals("Eevee", readerFor("   \nEevee\n").readName("> "));
-        assertTrue(printed.toString().contains("can't be empty"));
+    // Bad input: blank name -> asks again, then "Eevee"
+    static void testReadName_blank() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        InputReader reader = createReader("   \nEevee\n", output);
+
+        boolean correct =
+            reader.readName("> ").equals("Eevee")
+            && output.toString().contains("Card name can't be empty");
+
+        check("readName - blank", correct);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readName rejects a name over 40 characters.
-     */
-    public void testReadNameTooLongThenValid()
-    {
+    // Bad input: 41 characters -> asks again; exactly 40 is fine
+    static void testReadName_tooLong() {
         String tooLong = "a".repeat(41);
-        assertEquals("Eevee",
-            readerFor(tooLong + "\nEevee\n").readName("> "));
-        assertTrue(printed.toString().contains("40"));
-    }
-
-    // ----------------------------------------------------------
-    /**
-     * Tests that readName accepts a name of exactly 40 characters.
-     */
-    public void testReadNameExactlyFortyCharacters()
-    {
         String forty = "a".repeat(40);
-        assertEquals(forty, readerFor(forty + "\n").readName("> "));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        InputReader reader =
+            createReader(tooLong + "\n" + forty + "\n", output);
+
+        boolean correct =
+            reader.readName("> ").equals(forty)
+            && output.toString().contains("40 characters");
+
+        check("readName - too long", correct);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readName throws when the input ends.
-     */
-    public void testReadNameInputEnds()
-    {
-        Exception thrown = null;
-        try
-        {
-            readerFor("").readName("> ");
+    // Bad input: no input at all (like Ctrl+D) -> NoSuchElementException
+    static void testReadName_inputEnds() {
+        InputReader reader = createReader("", new ByteArrayOutputStream());
+
+        boolean threw = false;
+        try {
+            reader.readName("> ");
         }
-        catch (Exception e)
-        {
-            thrown = e;
+        catch (NoSuchElementException e) {
+            threw = true;
         }
-        assertTrue(thrown instanceof java.util.NoSuchElementException);
+
+        check("readName - input ends", threw);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readInt returns a normal number.
-     */
-    public void testReadInt()
-    {
-        assertEquals(5, readerFor("5\n").readInt("> ", 1, 100));
+    // Normal: "5" -> 5
+    static void testReadInt_normal() {
+        InputReader reader = createReader("5\n", new ByteArrayOutputStream());
+
+        check("readInt - normal", reader.readInt("> ", 1, 100) == 5);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readInt accepts the smallest and largest values.
-     */
-    public void testReadIntEdges()
-    {
-        assertEquals(1, readerFor("1\n").readInt("> ", 1, 100));
-        assertEquals(100, readerFor("100\n").readInt("> ", 1, 100));
+    // Normal: the smallest and largest allowed values are accepted
+    static void testReadInt_edges() {
+        InputReader reader =
+            createReader("1\n100\n", new ByteArrayOutputStream());
+
+        boolean correct =
+            reader.readInt("> ", 1, 100) == 1
+            && reader.readInt("> ", 1, 100) == 100;
+
+        check("readInt - edges", correct);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readInt rejects letters and negative numbers.
-     */
-    public void testReadIntLettersThenNegativeThenValid()
-    {
-        assertEquals(7,
-            readerFor("abc\n-3\n7\n").readInt("> ", 1, 100));
-        String output = printed.toString();
-        assertTrue(output.contains("Please enter a number."));
-        assertTrue(output.contains("from 1 to 100"));
+    // Bad input: "abc" then "-3" -> both rejected, then 7
+    static void testReadInt_lettersAndNegative() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        InputReader reader = createReader("abc\n-3\n7\n", output);
+
+        boolean correct =
+            reader.readInt("> ", 1, 100) == 7
+            && output.toString().contains("Please enter a number.")
+            && output.toString().contains("from 1 to 100");
+
+        check("readInt - letters and negative", correct);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readInt rejects zero and very large numbers.
-     */
-    public void testReadIntZeroAndHugeRejected()
-    {
-        assertEquals(2, readerFor("0\n999999999999\n101\n2\n")
-            .readInt("> ", 1, 100));
+    // Bad input: 0, a huge number, and 101 -> all rejected, then 2
+    static void testReadInt_zeroAndHuge() {
+        InputReader reader = createReader(
+            "0\n999999999999\n101\n2\n", new ByteArrayOutputStream());
+
+        check("readInt - zero and huge", reader.readInt("> ", 1, 100) == 2);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readInt throws when min is bigger than max.
-     */
-    public void testReadIntBadRange()
-    {
-        Exception thrown = null;
-        try
-        {
-            readerFor("5\n").readInt("> ", 10, 1);
+    // Bad input: min bigger than max -> IllegalArgumentException
+    static void testReadInt_badRange() {
+        InputReader reader = createReader("5\n", new ByteArrayOutputStream());
+
+        boolean threw = false;
+        try {
+            reader.readInt("> ", 10, 1);
         }
-        catch (Exception e)
-        {
-            thrown = e;
+        catch (IllegalArgumentException e) {
+            threw = true;
         }
-        assertTrue(thrown instanceof IllegalArgumentException);
+
+        check("readInt - bad range", threw);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readInt throws when the input ends.
-     */
-    public void testReadIntInputEnds()
-    {
-        Exception thrown = null;
-        try
-        {
-            readerFor("abc\n").readInt("> ", 1, 100);
+    // Bad input: "abc" and then input ends -> NoSuchElementException
+    static void testReadInt_inputEnds() {
+        InputReader reader =
+            createReader("abc\n", new ByteArrayOutputStream());
+
+        boolean threw = false;
+        try {
+            reader.readInt("> ", 1, 100);
         }
-        catch (Exception e)
-        {
-            thrown = e;
+        catch (NoSuchElementException e) {
+            threw = true;
         }
-        assertTrue(thrown instanceof java.util.NoSuchElementException);
+
+        check("readInt - input ends", threw);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readRarity returns the picked rarity.
-     */
-    public void testReadRarity()
-    {
-        assertEquals(Rarity.RARE, readerFor("3\n").readRarity());
+    // Normal: "3" -> RARE
+    static void testReadRarity_normal() {
+        InputReader reader = createReader("3\n", new ByteArrayOutputStream());
+
+        check("readRarity - normal", reader.readRarity() == Rarity.RARE);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readRarity rejects a number that isn't an option.
-     */
-    public void testReadRarityOutOfRangeThenValid()
-    {
-        assertEquals(Rarity.COMMON, readerFor("9\n1\n").readRarity());
+    // Bad input: "9" isn't an option -> asks again, then "1" -> COMMON
+    static void testReadRarity_outOfRange() {
+        InputReader reader =
+            createReader("9\n1\n", new ByteArrayOutputStream());
+
+        check("readRarity - out of range",
+            reader.readRarity() == Rarity.COMMON);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readEnergyType returns the picked energy type.
-     */
-    public void testReadEnergyType()
-    {
-        assertEquals(EnergyType.FIRE, readerFor("2\n").readEnergyType());
+    // Normal: "2" -> FIRE
+    static void testReadEnergyType_normal() {
+        InputReader reader = createReader("2\n", new ByteArrayOutputStream());
+
+        check("readEnergyType - normal",
+            reader.readEnergyType() == EnergyType.FIRE);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that readEnergyType rejects a typed word like "Fairy".
-     */
-    public void testReadEnergyTypeWordThenValid()
-    {
-        assertEquals(EnergyType.WATER,
-            readerFor("Fairy\n3\n").readEnergyType());
+    // Bad input: typing "Fairy" -> asks again, then "3" -> WATER
+    static void testReadEnergyType_word() {
+        InputReader reader =
+            createReader("Fairy\n3\n", new ByteArrayOutputStream());
+
+        check("readEnergyType - typed word",
+            reader.readEnergyType() == EnergyType.WATER);
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that hasMoreInput is true when there is input left.
-     */
-    public void testHasMoreInput()
-    {
-        assertTrue(readerFor("Pikachu\n").hasMoreInput());
+    // Normal: input left -> true
+    static void testHasMoreInput_normal() {
+        InputReader reader =
+            createReader("Pikachu\n", new ByteArrayOutputStream());
+
+        check("hasMoreInput - normal", reader.hasMoreInput());
     }
 
-    // ----------------------------------------------------------
-    /**
-     * Tests that hasMoreInput is false when input has ended.
-     */
-    public void testHasMoreInputEmpty()
-    {
-        assertFalse(readerFor("").hasMoreInput());
+    // Bad input: no input left (like Ctrl+D) -> false
+    static void testHasMoreInput_empty() {
+        InputReader reader = createReader("", new ByteArrayOutputStream());
+
+        check("hasMoreInput - empty", !reader.hasMoreInput());
+    }
+
+    // Creates an InputReader using fake keyboard input
+    static InputReader createReader(String input,
+        ByteArrayOutputStream output) {
+
+        return new InputReader(new Scanner(input), new PrintStream(output));
+    }
+
+    // Prints PASS or FAIL and keeps track of totals
+    static void check(String testName, boolean condition) {
+        if (condition) {
+            System.out.println("PASS: " + testName);
+            passed++;
+        }
+        else {
+            System.out.println("FAIL: " + testName);
+            failed++;
+        }
     }
 }
