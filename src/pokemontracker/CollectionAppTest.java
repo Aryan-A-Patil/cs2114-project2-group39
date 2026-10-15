@@ -1,282 +1,242 @@
 package pokemontracker;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.util.NoSuchElementException;
-import java.util.Scanner;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
- * This is the test class for InputReader. Each test gives the reader
- * fake keyboard input, like "abc\n5\n", instead of the real keyboard.
+ * Tests for CollectionApp. Each test runs the whole menu with fake
+ * keyboard input, then checks what was printed and what ended up in the
+ * collection. Follows the test plan in our specification.
+ *
+ * Menu: 1 add Pokemon, 2 add Energy, 3 remove, 4 count, 5 show, 6 quit.
+ * Rarity list: 1 Common ... 3 Rare. Energy list: 1 Grass, 2 Fire, 3 Water.
  *
  * @author Fernando Zuniga Leon (zfernando)
- * @version 2026.10.14
+ * @version 2026.10.15
  */
-public class InputReaderTest {
+public class CollectionAppTest
+{
+    // Normal: constructor builds an app
+    @Test
+    public void testConstructor()
+    {
+        InputReader reader = new InputReader(new java.util.Scanner("6\n"));
 
-    static int passed = 0;
-    static int failed = 0;
-
-    public static void main(String[] args) {
-        testConstructor_normal();
-        testConstructor_null();
-        testReadName_normal();
-        testReadName_trimsSpaces();
-        testReadName_specialCharacters();
-        testReadName_blank();
-        testReadName_tooLong();
-        testReadName_inputEnds();
-        testReadInt_normal();
-        testReadInt_edges();
-        testReadInt_lettersAndNegative();
-        testReadInt_zeroAndHuge();
-        testReadInt_badRange();
-        testReadInt_inputEnds();
-        testReadRarity_normal();
-        testReadRarity_outOfRange();
-        testReadEnergyType_normal();
-        testReadEnergyType_word();
-        testHasMoreInput_normal();
-        testHasMoreInput_empty();
-
-        System.out.println("\n" + passed + " passed, " + failed + " failed");
+        assertNotNull(new CollectionApp(new CardCollection("Sam"), reader));
     }
 
-    // Normal: a reader with input says it has more input
-    static void testConstructor_normal() {
-        InputReader reader = createReader("hi\n", new ByteArrayOutputStream());
+    // Bad input: null collection or null reader -> IllegalArgumentException
+    @Test
+    public void testConstructorNull()
+    {
+        InputReader reader = new InputReader(new java.util.Scanner(""));
 
-        check("constructor - normal", reader.hasMoreInput());
+        assertThrows(IllegalArgumentException.class,
+            () -> new CollectionApp(null, reader));
+        assertThrows(IllegalArgumentException.class,
+            () -> new CollectionApp(new CardCollection("Sam"), null));
     }
 
-    // Bad input: null scanner or null output -> IllegalArgumentException
-    static void testConstructor_null() {
-        boolean nullScannerThrew = false;
-        try {
-            new InputReader(null);
-        }
-        catch (IllegalArgumentException e) {
-            nullScannerThrew = true;
-        }
+    // Normal: choose 6 -> program quits
+    @Test
+    public void testRunQuit()
+    {
+        String output = runWith(new CardCollection("Sam"), "6\n");
 
-        boolean nullOutputThrew = false;
-        try {
-            new InputReader(new Scanner(""), null);
-        }
-        catch (IllegalArgumentException e) {
-            nullOutputThrew = true;
-        }
-
-        check("constructor - null", nullScannerThrew && nullOutputThrew);
+        assertTrue(output.contains("Goodbye!"));
     }
 
-    // Normal: "Pikachu" -> "Pikachu"
-    static void testReadName_normal() {
-        InputReader reader =
-            createReader("Pikachu\n", new ByteArrayOutputStream());
+    // Normal: add 3 Rare Pikachu, then count Pikachu -> 3
+    @Test
+    public void testRunAddAndCountPokemon()
+    {
+        CardCollection collection = new CardCollection("Sam");
 
-        check("readName - normal",
-            reader.readName("> ").equals("Pikachu"));
+        String output = runWith(collection,
+            "1\nPikachu\n3\n3\n4\n1\nPikachu\n6\n");
+
+        assertEquals(3, collection.countPokemon("Pikachu"));
+        assertTrue(output.contains("You have 3 Pikachu."));
     }
 
-    // Normal: "   Pikachu  " -> "Pikachu"
-    static void testReadName_trimsSpaces() {
-        InputReader reader =
-            createReader("   Pikachu  \n", new ByteArrayOutputStream());
+    // Normal: "Pikachu" and " pikachu " count as the same card
+    @Test
+    public void testRunDifferentCapitalization()
+    {
+        CardCollection collection = new CardCollection("Sam");
 
-        check("readName - trims spaces",
-            reader.readName("> ").equals("Pikachu"));
+        runWith(collection, "1\nPikachu\n1\n2\n1\n pikachu \n1\n1\n6\n");
+
+        assertEquals(3, collection.countPokemon("PIKACHU"));
     }
 
-    // Normal: real card names with odd characters are accepted
-    static void testReadName_specialCharacters() {
-        InputReader reader = createReader(
-            "Farfetch'd\nMr. Mime\n", new ByteArrayOutputStream());
+    // Normal: add 10 Fire Energy, then count Fire -> 10
+    @Test
+    public void testRunAddAndCountEnergy()
+    {
+        CardCollection collection = new CardCollection("Sam");
 
-        boolean correct =
-            reader.readName("> ").equals("Farfetch'd")
-            && reader.readName("> ").equals("Mr. Mime");
+        String output = runWith(collection, "2\n2\n10\n4\n2\n2\n6\n");
 
-        check("readName - special characters", correct);
+        assertEquals(10, collection.countEnergy(EnergyType.FIRE));
+        assertTrue(output.contains("You have 10"));
     }
 
-    // Bad input: blank name -> asks again, then "Eevee"
-    static void testReadName_blank() {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        InputReader reader = createReader("   \nEevee\n", output);
+    // Normal: own 3 Eevee, remove 2 -> 1 left
+    @Test
+    public void testRunRemovePokemon()
+    {
+        CardCollection collection = new CardCollection("Sam");
+        collection.addPokemon(new PokemonCard("Eevee", Rarity.COMMON), 3);
 
-        boolean correct =
-            reader.readName("> ").equals("Eevee")
-            && output.toString().contains("Card name can't be empty");
+        String output = runWith(collection, "3\n1\nEevee\n2\n6\n");
 
-        check("readName - blank", correct);
+        assertEquals(1, collection.countPokemon("Eevee"));
+        assertTrue(output.contains("Removed 2 Eevee"));
     }
 
-    // Bad input: 41 characters -> asks again; exactly 40 is fine
-    static void testReadName_tooLong() {
-        String tooLong = "a".repeat(41);
-        String forty = "a".repeat(40);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        InputReader reader =
-            createReader(tooLong + "\n" + forty + "\n", output);
+    // Normal: own 5 Water Energy, remove 5 -> 0 left
+    @Test
+    public void testRunRemoveEnergy()
+    {
+        CardCollection collection = new CardCollection("Sam");
+        collection.addEnergy(new EnergyCard(EnergyType.WATER), 5);
 
-        boolean correct =
-            reader.readName("> ").equals(forty)
-            && output.toString().contains("40 characters");
+        runWith(collection, "3\n2\n3\n5\n6\n");
 
-        check("readName - too long", correct);
+        assertEquals(0, collection.countEnergy(EnergyType.WATER));
     }
 
-    // Bad input: no input at all (like Ctrl+D) -> NoSuchElementException
-    static void testReadName_inputEnds() {
-        InputReader reader = createReader("", new ByteArrayOutputStream());
+    // Normal: show collection prints the cards
+    @Test
+    public void testRunShowAll()
+    {
+        CardCollection collection = new CardCollection("Sam");
+        collection.addPokemon(new PokemonCard("Eevee", Rarity.COMMON), 1);
 
-        boolean threw = false;
-        try {
-            reader.readName("> ");
-        }
-        catch (NoSuchElementException e) {
-            threw = true;
-        }
+        String output = runWith(collection, "5\n6\n");
 
-        check("readName - input ends", threw);
+        assertTrue(output.contains("Eevee"));
     }
 
-    // Normal: "5" -> 5
-    static void testReadInt_normal() {
-        InputReader reader = createReader("5\n", new ByteArrayOutputStream());
+    // Bad input: remove from an empty collection -> message, no crash
+    @Test
+    public void testRunRemoveFromEmpty()
+    {
+        String output = runWith(new CardCollection("Sam"), "3\n6\n");
 
-        check("readInt - normal", reader.readInt("> ", 1, 100) == 5);
+        assertTrue(output.contains("Your collection is empty."));
     }
 
-    // Normal: the smallest and largest allowed values are accepted
-    static void testReadInt_edges() {
-        InputReader reader =
-            createReader("1\n100\n", new ByteArrayOutputStream());
+    // Bad input: own 2 Pikachu, try to remove 5 -> nothing removed
+    @Test
+    public void testRunRemoveMoreThanOwned()
+    {
+        CardCollection collection = new CardCollection("Sam");
+        collection.addPokemon(new PokemonCard("Pikachu", Rarity.RARE), 2);
 
-        boolean correct =
-            reader.readInt("> ", 1, 100) == 1
-            && reader.readInt("> ", 1, 100) == 100;
+        String output = runWith(collection, "3\n1\nPikachu\n5\n6\n");
 
-        check("readInt - edges", correct);
+        assertEquals(2, collection.countPokemon("Pikachu"));
+        assertTrue(output.contains("You only have 2 Pikachu."));
     }
 
-    // Bad input: "abc" then "-3" -> both rejected, then 7
-    static void testReadInt_lettersAndNegative() {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        InputReader reader = createReader("abc\n-3\n7\n", output);
+    // Bad input: remove Mewtwo when we only own Pikachu -> nothing removed
+    @Test
+    public void testRunRemoveCardNotOwned()
+    {
+        CardCollection collection = new CardCollection("Sam");
+        collection.addPokemon(new PokemonCard("Pikachu", Rarity.RARE), 1);
 
-        boolean correct =
-            reader.readInt("> ", 1, 100) == 7
-            && output.toString().contains("Please enter a number.")
-            && output.toString().contains("from 1 to 100");
+        String output = runWith(collection, "3\n1\nMewtwo\n1\n6\n");
 
-        check("readInt - letters and negative", correct);
+        assertEquals(1, collection.countPokemon("Pikachu"));
+        assertTrue(output.contains("You only have 0 Mewtwo."));
     }
 
-    // Bad input: 0, a huge number, and 101 -> all rejected, then 2
-    static void testReadInt_zeroAndHuge() {
-        InputReader reader = createReader(
-            "0\n999999999999\n101\n2\n", new ByteArrayOutputStream());
+    // Bad input: menu choices 9, 0, and "abc" -> rejected, then 6 quits
+    @Test
+    public void testRunBadMenuChoices()
+    {
+        String output = runWith(new CardCollection("Sam"), "9\n0\nabc\n6\n");
 
-        check("readInt - zero and huge", reader.readInt("> ", 1, 100) == 2);
+        assertTrue(output.contains("Please enter a number from 1 to 6."));
+        assertTrue(output.contains("Please enter a number."));
+        assertTrue(output.contains("Goodbye!"));
     }
 
-    // Bad input: min bigger than max -> IllegalArgumentException
-    static void testReadInt_badRange() {
-        InputReader reader = createReader("5\n", new ByteArrayOutputStream());
+    // Bad input: quantities -2, 0, "abc" -> rejected, then 4 is added
+    @Test
+    public void testRunBadQuantities()
+    {
+        CardCollection collection = new CardCollection("Sam");
 
-        boolean threw = false;
-        try {
-            reader.readInt("> ", 10, 1);
-        }
-        catch (IllegalArgumentException e) {
-            threw = true;
-        }
+        runWith(collection, "1\nPikachu\n1\n-2\n0\nabc\n4\n6\n");
 
-        check("readInt - bad range", threw);
+        assertEquals(4, collection.countPokemon("Pikachu"));
     }
 
-    // Bad input: "abc" and then input ends -> NoSuchElementException
-    static void testReadInt_inputEnds() {
-        InputReader reader =
-            createReader("abc\n", new ByteArrayOutputStream());
+    // Bad input: blank name -> rejected, then "Pikachu" is added
+    @Test
+    public void testRunBlankName()
+    {
+        CardCollection collection = new CardCollection("Sam");
 
-        boolean threw = false;
-        try {
-            reader.readInt("> ", 1, 100);
-        }
-        catch (NoSuchElementException e) {
-            threw = true;
-        }
+        String output = runWith(collection, "1\n   \nPikachu\n1\n1\n6\n");
 
-        check("readInt - input ends", threw);
+        assertTrue(output.contains("Card name can't be empty."));
+        assertEquals(1, collection.countPokemon("Pikachu"));
     }
 
-    // Normal: "3" -> RARE
-    static void testReadRarity_normal() {
-        InputReader reader = createReader("3\n", new ByteArrayOutputStream());
+    // Bad input: rarity 7 and energy "Fairy" -> rejected, then valid picks
+    @Test
+    public void testRunBadRarityAndEnergy()
+    {
+        CardCollection collection = new CardCollection("Sam");
 
-        check("readRarity - normal", reader.readRarity() == Rarity.RARE);
+        runWith(collection, "1\nPikachu\n7\n1\n1\n2\nFairy\n1\n2\n6\n");
+
+        assertEquals(1, collection.countPokemon("Pikachu"));
+        assertEquals(2, collection.countEnergy(EnergyType.GRASS));
     }
 
-    // Bad input: "9" isn't an option -> asks again, then "1" -> COMMON
-    static void testReadRarity_outOfRange() {
-        InputReader reader =
-            createReader("9\n1\n", new ByteArrayOutputStream());
+    // Bad input: input stops in the middle of adding a card (like Ctrl+D)
+    @Test
+    public void testRunInputEndsSuddenly()
+    {
+        CardCollection collection = new CardCollection("Sam");
 
-        check("readRarity - out of range",
-            reader.readRarity() == Rarity.COMMON);
+        String output = runWith(collection, "1\nPikachu\n");
+
+        assertTrue(output.contains("Goodbye!"));
+        assertEquals(0, collection.countPokemon("Pikachu"));
     }
 
-    // Normal: "2" -> FIRE
-    static void testReadEnergyType_normal() {
-        InputReader reader = createReader("2\n", new ByteArrayOutputStream());
+    // Bad input: no input at all -> exits cleanly
+    @Test
+    public void testRunEmptyInput()
+    {
+        String output = runWith(new CardCollection("Sam"), "");
 
-        check("readEnergyType - normal",
-            reader.readEnergyType() == EnergyType.FIRE);
+        assertTrue(output.contains("Goodbye!"));
     }
 
-    // Bad input: typing "Fairy" -> asks again, then "3" -> WATER
-    static void testReadEnergyType_word() {
-        InputReader reader =
-            createReader("Fairy\n3\n", new ByteArrayOutputStream());
+    /**
+     * Runs the menu with fake keyboard input and returns what it printed.
+     *
+     * @param collection the collection the app edits
+     * @param input the lines the fake user types
+     * @return everything the app printed
+     */
+    private String runWith(CardCollection collection, String input)
+    {
+        java.io.ByteArrayOutputStream printed =
+            new java.io.ByteArrayOutputStream();
+        java.io.PrintStream out = new java.io.PrintStream(printed);
 
-        check("readEnergyType - typed word",
-            reader.readEnergyType() == EnergyType.WATER);
-    }
+        InputReader reader = new InputReader(new java.util.Scanner(input), out);
+        new CollectionApp(collection, reader, out).run();
 
-    // Normal: input left -> true
-    static void testHasMoreInput_normal() {
-        InputReader reader =
-            createReader("Pikachu\n", new ByteArrayOutputStream());
-
-        check("hasMoreInput - normal", reader.hasMoreInput());
-    }
-
-    // Bad input: no input left (like Ctrl+D) -> false
-    static void testHasMoreInput_empty() {
-        InputReader reader = createReader("", new ByteArrayOutputStream());
-
-        check("hasMoreInput - empty", !reader.hasMoreInput());
-    }
-
-    // Creates an InputReader using fake keyboard input
-    static InputReader createReader(String input,
-        ByteArrayOutputStream output) {
-
-        return new InputReader(new Scanner(input), new PrintStream(output));
-    }
-
-    // Prints PASS or FAIL and keeps track of totals
-    static void check(String testName, boolean condition) {
-        if (condition) {
-            System.out.println("PASS: " + testName);
-            passed++;
-        }
-        else {
-            System.out.println("FAIL: " + testName);
-            failed++;
-        }
+        return printed.toString();
     }
 }
