@@ -103,17 +103,20 @@ right-click a test file → Run As → JUnit Test.
 
 ## Attribution rows
 
-File	Team member	Contribution (how)
-InputReader.java	Fernando	Wrote, reviewed, and tested
-InputReaderTest.java	Fernando	Wrote, ran, and verified
-CollectionApp.java	Fernando	Wrote, reviewed, and tested
-CollectionAppTest.java	Fernando	Wrote, ran, and verified
-Rarity.java	Aryan	Wrote, reviewed, and tested
-EnergyType.java	Aryan	Wrote, reviewed, and tested
-PokemonCard.java	Aryan	Wrote, reviewed, and tested
-EnergyCard.java	Aryan	Wrote, reviewed, and tested
-PokemonCardTest.java	Aryan	Wrote, ran, and verified
-EnergyCardTest.java	Aryan	Wrote, ran, and verified
+| File | Team member | Contribution (how) |
+| --- | --- | --- |
+| InputReader.java | Fernando | Wrote with GenAI assistance; reviewed and tested |
+| InputReaderTest.java | Fernando | Wrote with GenAI assistance; ran and verified |
+| CollectionApp.java | Fernando | Wrote with GenAI assistance; reviewed and tested |
+| CollectionAppTest.java | Fernando | Wrote with GenAI assistance; ran and verified |
+| Rarity.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
+| EnergyType.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
+| PokemonCard.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
+| EnergyCard.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
+| PokemonCardTest.java | Aryan | Wrote with GenAI assistance; ran and verified |
+| EnergyCardTest.java | Aryan | Wrote with GenAI assistance; ran and verified |
+LinkedChain.java	Ash	Adapted instructor-provided starter code; reviewed and tested
+LinkedChainTest.java	Ash	Solved some doubts with GenAI assistance; ran and verified all 27 JUnit tests
 
 **GenAI note (Fernando):** I used Claude to draft `InputReader`,
 `CollectionApp`, and their tests from our specification's method signatures
