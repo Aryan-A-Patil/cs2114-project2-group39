@@ -5,6 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/**
+ * This is the LinkedChain test class.
+ *
+ * @author Golden You
+ * @version 2026.10.22
+ */
 public class LinkedChainTest
 {
     private LinkedChain<String> chain;

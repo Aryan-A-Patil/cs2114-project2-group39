@@ -5,6 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/**
+ * This is the test class for the CardCollection class.
+ *
+ * @author Golden You
+ * @version 2026.10.14
+ */
 public class CardCollectionTest {
 
     private CardCollection collection;
