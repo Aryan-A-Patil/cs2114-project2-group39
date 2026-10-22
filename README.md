@@ -181,8 +181,8 @@ TradeOfferTest (8 tests) and TradeHelperTest (8 tests) cover normal trades, rari
 | EnergyType.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
 | PokemonCard.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
 | EnergyCard.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
-| PokemonCardTest.java | Aryan | Wrote with GenAI assistance; ran and verified |
-| EnergyCardTest.java | Aryan | Wrote with GenAI assistance; ran and verified |
+| PokemonCardTest.java | Aryan | Wrote; ran and verified |
+| EnergyCardTest.java | Aryan | Wrote; ran and verified |
 | LinkedChain.java | Ash | Used instructor-provided starter code without modifying its implementation; reviewed and tested |
 | LinkedChainTest.java | Ash | Developed JUnit tests; ran and verified all 27 tests |
 | CardCollection.java | Golden; Aryan | Golden wrote; Fernando moved the file into src/pokemontracker; Aryan added getOwnerName and takePokemon with GenAI assistance |
