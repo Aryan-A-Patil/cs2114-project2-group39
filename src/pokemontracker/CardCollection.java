@@ -5,7 +5,8 @@ package pokemontracker;
  * Uses LinkedChain to store individual physical cards.
  *
  * @author Golden You
- * @version 2026.10.14
+ * @author Aryan Patil (getOwnerName and takePokemon, for trading)
+ * @version 2026.10.22
  */
 public class CardCollection
 {
@@ -207,6 +208,75 @@ public class CardCollection
         EnergyCard target = new EnergyCard(type);
 
         return energyCards.count(target);
+    }
+
+    /**
+     * Gets the owner's name.
+     *
+     * @return the trimmed owner name
+     */
+    public String getOwnerName()
+    {
+        return ownerName;
+    }
+
+    /**
+     * Removes copies of a Pokémon by name and returns the removed cards,
+     * so their rarities can be kept (used when trading).
+     * If there are not enough copies, nothing is removed.
+     *
+     * @param name the Pokémon name
+     * @param quantity the number of copies to remove
+     * @return the removed cards, or an empty array if there were not
+     *         enough copies
+     * @throws IllegalArgumentException if name is null or blank,
+     *         or quantity is less than 1
+     */
+    public PokemonCard[] takePokemon(String name, int quantity)
+    {
+        if (name == null || name.trim().isEmpty())
+        {
+            throw new IllegalArgumentException(
+                "Pokémon name cannot be empty.");
+        }
+
+        if (quantity < 1)
+        {
+            throw new IllegalArgumentException(
+                "Quantity must be at least 1.");
+        }
+
+        PokemonCard target =
+            new PokemonCard(name, Rarity.COMMON);
+
+        // Check first so an unsuccessful take changes nothing.
+        if (pokemonCards.count(target) < quantity)
+        {
+            return new PokemonCard[0];
+        }
+
+        // Copy out the first matches. remove(target) also removes the
+        // first match each time, so these are exactly the cards removed.
+        PokemonCard[] all =
+            pokemonCards.toArray(new PokemonCard[pokemonCards.size()]);
+        PokemonCard[] taken = new PokemonCard[quantity];
+        int found = 0;
+
+        for (int i = 0; i < all.length && found < quantity; i++)
+        {
+            if (all[i].equals(target))
+            {
+                taken[found] = all[i];
+                found++;
+            }
+        }
+
+        for (int i = 0; i < quantity; i++)
+        {
+            pokemonCards.remove(target);
+        }
+
+        return taken;
     }
 
     /**

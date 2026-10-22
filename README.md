@@ -111,7 +111,44 @@ Nothing. CardCollection only calls the chain's public methods (add, remove, coun
 
 ### What doesn't work yet
 
-Nothing known. CardCollectionTest has 11 tests, including an empty collection and removing cards that aren't there, and all of them pass.
+Nothing known. CardCollectionTest has 11 tests, including an empty collection and removing cards that aren't there, and all of them pass. (Aryan later added 4 more for the trading methods; see below.)
+
+## Stretch goal: Trading between users — Aryan
+
+The trade helper stretch goal from our scope now works. From the menu you can add a new user (7), switch between users (8), and trade cards with another user (9). Options 1–6 are unchanged and always act on the current user's collection.
+
+### How it works
+
+- **Users are stored in a third LinkedChain.** CollectionApp keeps a `LinkedChain<CardCollection>` of every user, so the same generic LinkedChain class now holds three element types: PokemonCard, EnergyCard, and CardCollection. Users are found with `toArray()`, comparing names while ignoring case.
+- **TradeOffer** (new) describes what one side gives: `TradeOffer.pokemon("Pikachu", 2)` or `TradeOffer.energy(EnergyType.FIRE, 3)`.
+- **TradeHelper.trade(first, firstGives, second, secondGives)** (new) checks that *both* sides own enough before moving anything. If either side is short, it returns false and nothing changes on either side.
+- **Rarity is kept.** A new `CardCollection.takePokemon(name, quantity)` removes the cards and returns them, so a traded Holo Rare Pikachu stays Holo Rare for the new owner.
+
+### What changed from the spec
+
+- The spec only named TradeHelper ("finds and performs trades between two CardCollections"). We added TradeOffer so one `trade` method can handle Pokémon-for-Pokémon, Pokémon-for-Energy, and Energy-for-Energy trades instead of four separate methods.
+- CardCollection gained `getOwnerName()` (to find and print users) and `takePokemon(...)` (to keep rarity). Its existing methods are unchanged.
+- The menu now goes up to 9. Quit stays at 6 so the existing tests and menu numbers didn't change; one test (`testRunBadMenuChoices`) was updated to expect "from 1 to 9".
+- The spec's "still unknown" question about splitting a tie between several possible trades didn't come up: the user picks exactly what each side gives.
+
+### Where validation lives (two layers, like the rest of the app)
+
+| Bad input | Caught by | What happens |
+| --- | --- | --- |
+| Trading with only one user | `CollectionApp.handleTrade` | "You need at least two users to trade." |
+| Trading with yourself | `CollectionApp.handleTrade` (backup: `TradeHelper.trade` throws) | "You can't trade with yourself." |
+| Trading with / switching to a user who doesn't exist | `CollectionApp` | "No user named Misty." |
+| Adding a user name that already exists | `CollectionApp.handleAddUser` | "A user named Sam already exists." |
+| Offering more than you own, or a card you don't own | `TradeHelper.trade` | Returns false; app prints "Aryan only has 1 Pikachu. No cards were traded." |
+| Blank name, null type, quantity below 1 | `InputReader` re-prompts (backup: `TradeOffer` throws) | Asks again |
+
+### Big-O
+
+`trade` is O((q1 + q2) · n): each side's count is O(n), and moving q cards calls `remove` q times, each O(n). Finding a user is O(u) for u users.
+
+### Tests
+
+TradeOfferTest (8 tests) and TradeHelperTest (8 tests) cover normal trades, rarity being kept, not owning enough, a card not owned, an empty collection, trading with yourself, and null arguments. CardCollectionTest has 4 new tests for `getOwnerName` and `takePokemon`, and CollectionAppTest has 7 new tests that run the add-user, switch-user, and trade menus with good and bad input. All 129 tests pass.
 
 ## Next Steps (Fernando)
 
@@ -121,7 +158,8 @@ Nothing known. CardCollectionTest has 11 tests, including an empty collection an
 
 ## Next Steps (Aryan)
 
-- If we do the save/load stretch goal, add a way to turn a card into a line of text and back (for example PokemonCard.fromLine(String)), which must reject badly formed lines.
+- Trading stretch goal: **done** (see "Stretch goal: Trading between users" above). This also covers the "Trade" menu item in Fernando's next steps.
+- Save/load stretch goal: if we do it, add a way to turn a card into a line of text and back (for example PokemonCard.fromLine(String)), which must reject badly formed lines. Saving would also need to store every user, not just one.
 - New tests: parsing a valid line, and a bad-input test for a blank or garbled line.
 
 ## Next Steps (Ash)
@@ -137,8 +175,8 @@ Nothing known. CardCollectionTest has 11 tests, including an empty collection an
 | --- | --- | --- |
 | InputReader.java | Fernando | Wrote with GenAI assistance; reviewed and tested |
 | InputReaderTest.java | Fernando | Wrote with GenAI assistance; ran and verified |
-| CollectionApp.java | Fernando | Wrote with GenAI assistance; reviewed and tested |
-| CollectionAppTest.java | Fernando | Wrote with GenAI assistance; ran and verified |
+| CollectionApp.java | Fernando; Aryan | Fernando wrote with GenAI assistance; Aryan added users and trading (options 7–9) with GenAI assistance |
+| CollectionAppTest.java | Fernando; Aryan | Fernando wrote with GenAI assistance; Aryan added 7 user/trade tests with GenAI assistance |
 | Rarity.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
 | EnergyType.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
 | PokemonCard.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
@@ -147,13 +185,17 @@ Nothing known. CardCollectionTest has 11 tests, including an empty collection an
 | EnergyCardTest.java | Aryan | Wrote with GenAI assistance; ran and verified |
 | LinkedChain.java | Ash | Used instructor-provided starter code without modifying its implementation; reviewed and tested |
 | LinkedChainTest.java | Ash | Developed JUnit tests; ran and verified all 27 tests |
-| CardCollection.java | Golden | Wrote; Fernando moved the file into src/pokemontracker |
-| CardCollectionTest.java | Golden | Wrote; ran and verified |
+| CardCollection.java | Golden; Aryan | Golden wrote; Fernando moved the file into src/pokemontracker; Aryan added getOwnerName and takePokemon with GenAI assistance |
+| CardCollectionTest.java | Golden; Aryan | Golden wrote; ran and verified; Aryan added 4 tests for the trading methods with GenAI assistance |
+| TradeOffer.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
+| TradeOfferTest.java | Aryan | Wrote with GenAI assistance; ran and verified |
+| TradeHelper.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
+| TradeHelperTest.java | Aryan | Wrote with GenAI assistance; ran and verified |
 
 ## GenAI Usage Notes
 
 **GenAI note (Fernando):** I used Claude to draft InputReader, CollectionApp, and their tests from our specification's method signatures and test plan. I reviewed the code, ran the tests, and checked that each bad-input case from our scope is handled where the spec says.
 
-**GenAI note (Aryan):** I used Claude to draft the card classes, enums, and their JUnit tests from our spec's method signatures and test plan. I read each test to check it tests something real, ran them all, and checked that the enum order matches InputReader's numbered menus.
+**GenAI note (Aryan):** I used Claude to draft the card classes, enums, and their JUnit tests from our spec's method signatures and test plan. I read each test to check it tests something real, ran them all, and checked that the enum order matches InputReader's numbered menus. For the trading stretch goal, I used Claude to design and draft TradeOffer, TradeHelper, the user and trade menu options, and their tests. I reviewed the code and ran every test.
 
 **GenAI note (Ash):** I used ChatGPT to help with questions about LinkedChain. I kept the instructor-provided LinkedChain implementation unchanged and used the tests to verify its behavior. I ran all 27 JUnit tests and confirmed they passed. I also reviewed the test coverage to make sure all 12 methods were included.

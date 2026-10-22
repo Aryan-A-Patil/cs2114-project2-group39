@@ -154,13 +154,13 @@ public class CollectionAppTest
         assertTrue(output.contains("You only have 0 Mewtwo."));
     }
 
-    // Bad input: menu choices 9, 0, and "abc" -> rejected, then 6 quits
+    // Bad input: menu choices 10, 0, and "abc" -> rejected, then 6 quits
     @Test
     public void testRunBadMenuChoices()
     {
-        String output = runWith(new CardCollection("Sam"), "9\n0\nabc\n6\n");
+        String output = runWith(new CardCollection("Sam"), "10\n0\nabc\n6\n");
 
-        assertTrue(output.contains("Please enter a number from 1 to 6."));
+        assertTrue(output.contains("Please enter a number from 1 to 9."));
         assertTrue(output.contains("Please enter a number."));
         assertTrue(output.contains("Goodbye!"));
     }
@@ -219,6 +219,98 @@ public class CollectionAppTest
         String output = runWith(new CardCollection("Sam"), "");
 
         assertTrue(output.contains("Goodbye!"));
+    }
+
+    // ----- Users and trading (added by Aryan) -----
+    // Menu: 7 add user, 8 switch user, 9 trade.
+
+    // Normal: add Sam, give Sam a card, switch back to Aryan
+    @Test
+    public void testRunAddAndSwitchUser()
+    {
+        CardCollection aryan = new CardCollection("Aryan");
+
+        String output = runWith(aryan,
+            "7\nSam\n1\nEevee\n1\n1\n5\n8\naryan\n6\n");
+
+        assertTrue(output.contains("Added Sam. Now using Sam's collection."));
+        assertTrue(output.contains("Sam's collection:"));
+        assertTrue(output.contains("Now using Aryan's collection."));
+        assertEquals(0, aryan.countPokemon("Eevee"));
+    }
+
+    // Bad input: adding a user whose name already exists
+    @Test
+    public void testRunAddDuplicateUser()
+    {
+        String output = runWith(new CardCollection("Aryan"), "7\n ARYAN \n6\n");
+
+        assertTrue(output.contains("A user named ARYAN already exists."));
+    }
+
+    // Bad input: switching with only one user, or to an unknown user
+    @Test
+    public void testRunSwitchUserBadInput()
+    {
+        String output = runWith(new CardCollection("Aryan"),
+            "8\n7\nSam\n8\nMisty\n6\n");
+
+        assertTrue(output.contains("There is only one user."));
+        assertTrue(output.contains("No user named Misty."));
+    }
+
+    // Normal: Aryan trades 2 Pikachu for 3 of Sam's Fire Energy
+    @Test
+    public void testRunTrade()
+    {
+        CardCollection aryan = new CardCollection("Aryan");
+        aryan.addPokemon(new PokemonCard("Pikachu", Rarity.RARE), 3);
+
+        String output = runWith(aryan,
+            "7\nSam\n2\n2\n5\n8\nAryan\n"     // Sam gets 5 Fire, back to Aryan
+            + "9\nSam\n1\nPikachu\n2\n"       // Aryan gives 2 Pikachu
+            + "2\n2\n3\n6\n");                // Sam gives 3 Fire Energy
+
+        assertTrue(output.contains("Trade complete: Aryan gave 2 Pikachu to "
+            + "Sam, and Sam gave 3 Fire Energy to Aryan."));
+        assertEquals(1, aryan.countPokemon("Pikachu"));
+        assertEquals(3, aryan.countEnergy(EnergyType.FIRE));
+    }
+
+    // Bad input: trading with only one user
+    @Test
+    public void testRunTradeNeedsTwoUsers()
+    {
+        String output = runWith(new CardCollection("Aryan"), "9\n6\n");
+
+        assertTrue(output.contains("You need at least two users to trade."));
+    }
+
+    // Bad input: trading with yourself, or with a user who doesn't exist
+    @Test
+    public void testRunTradeWithYourselfOrUnknown()
+    {
+        String output = runWith(new CardCollection("Aryan"),
+            "7\nSam\n9\nsam\n9\nMisty\n6\n");
+
+        assertTrue(output.contains("You can't trade with yourself."));
+        assertTrue(output.contains("No user named Misty."));
+    }
+
+    // Bad input: offering more than you own -> nothing is traded
+    @Test
+    public void testRunTradeNotEnough()
+    {
+        CardCollection aryan = new CardCollection("Aryan");
+        aryan.addPokemon(new PokemonCard("Pikachu", Rarity.RARE), 1);
+
+        String output = runWith(aryan,
+            "7\nSam\n8\nAryan\n9\nSam\n1\nPikachu\n5\n2\n1\n1\n6\n");
+
+        assertTrue(output.contains("Aryan only has 1 Pikachu."));
+        assertTrue(output.contains("Sam only has 0 Grass Energy."));
+        assertTrue(output.contains("No cards were traded."));
+        assertEquals(1, aryan.countPokemon("Pikachu"));
     }
 
     /**

@@ -152,4 +152,48 @@ public class CardCollectionTest {
         assertEquals(0, collection.totalCards());
         assertTrue(collection.isEmpty());
     }
+
+    // Added by Aryan for trading.
+    // Normal: getOwnerName returns the trimmed name
+    @Test
+    public void testGetOwnerName() {
+        assertEquals("Golden", collection.getOwnerName());
+        assertEquals("Sam", new CardCollection("  Sam ").getOwnerName());
+    }
+
+    // Normal: takePokemon removes and returns the cards, keeping rarity
+    @Test
+    public void testTakePokemon() {
+        collection.addPokemon(
+            new PokemonCard("Pikachu", Rarity.HOLO_RARE), 2);
+        collection.addPokemon(
+            new PokemonCard("Eevee", Rarity.COMMON), 1);
+
+        PokemonCard[] taken = collection.takePokemon("pikachu", 2);
+
+        assertEquals(2, taken.length);
+        assertEquals(Rarity.HOLO_RARE, taken[0].getRarity());
+        assertEquals(0, collection.countPokemon("Pikachu"));
+        assertEquals(1, collection.countPokemon("Eevee"));
+    }
+
+    // Bad input: not enough copies -> empty array, nothing removed
+    @Test
+    public void testTakePokemonNotEnough() {
+        collection.addPokemon(
+            new PokemonCard("Pikachu", Rarity.COMMON), 1);
+
+        assertEquals(0, collection.takePokemon("Pikachu", 2).length);
+        assertEquals(0, collection.takePokemon("Mewtwo", 1).length);
+        assertEquals(1, collection.countPokemon("Pikachu"));
+    }
+
+    // Bad input: blank name or quantity below 1 -> exception
+    @Test
+    public void testTakePokemonInvalidInput() {
+        assertThrows(IllegalArgumentException.class,
+            () -> collection.takePokemon("   ", 1));
+        assertThrows(IllegalArgumentException.class,
+            () -> collection.takePokemon("Pikachu", 0));
+    }
 }
