@@ -136,15 +136,15 @@ Nothing known. CardCollectionTest has 11 tests, including an empty collection an
 | File | Team member | Contribution (how) |
 | --- | --- | --- |
 | InputReader.java | Fernando | Wrote with GenAI assistance; reviewed and tested |
-| InputReaderTest.java | Fernando | Wrote with GenAI assistance; ran and verified |
+| InputReaderTest.java | Fernando | Wrote; ran and verified |
 | CollectionApp.java | Fernando | Wrote with GenAI assistance; reviewed and tested |
-| CollectionAppTest.java | Fernando | Wrote with GenAI assistance; ran and verified |
+| CollectionAppTest.java | Fernando | Wrote; ran and verified |
 | Rarity.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
 | EnergyType.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
 | PokemonCard.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
 | EnergyCard.java | Aryan | Wrote with GenAI assistance; reviewed and tested |
-| PokemonCardTest.java | Aryan | Wrote with GenAI assistance; ran and verified |
-| EnergyCardTest.java | Aryan | Wrote with GenAI assistance; ran and verified |
+| PokemonCardTest.java | Aryan | Wrote; ran and verified |
+| EnergyCardTest.java | Aryan | Wrote; ran and verified |
 | LinkedChain.java | Ash | Used instructor-provided starter code without modifying its implementation; reviewed and tested |
 | LinkedChainTest.java | Ash | Developed JUnit tests; ran and verified all 27 tests |
 | CardCollection.java | Golden | Wrote; Fernando moved the file into src/pokemontracker |
