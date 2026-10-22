@@ -2,6 +2,12 @@
 
 # Pokémon Card Collection Tracker
 
+## System diagram
+
+![System diagram: the user types into InputReader, which passes valid input to CollectionApp. CollectionApp hands cards and quantities to CardCollection, which is the only class that touches the two LinkedChains (LinkedChain<PokemonCard> and LinkedChain<EnergyCard>). Results flow back up and are printed.](docs/system-diagram.png)
+
+Input flows down: the user types, `InputReader` validates and re-prompts, `CollectionApp` builds card objects and hands them to `CardCollection`, which is the only class that touches the two LinkedChains. Answers (true/false, counts, the card listing) flow back up the same path and get printed.
+
 ## How to compile and run
 
 All files are in package `pokemontracker`, in one `src/pokemontracker` folder. JUnit 5 is needed for the tests (Eclipse/IntelliJ include it, or use `junit-platform-console-standalone.jar`).
