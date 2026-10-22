@@ -89,6 +89,24 @@ Nothing known in these four classes. The enum order is what InputReader's number
 
 I haven't identified any issues with LinkedChain or LinkedChainTest from the tests I ran. All 27 tests passed. Additional integration testing may still be useful as the other project components are completed.
 
+## Reflection (CardCollection and CardCollectionTest) — Golden
+
+### What changed from the spec
+
+- The constructor rejects a null or blank owner name with IllegalArgumentException. The spec didn't say what happens with a bad owner name.
+- addPokemon and addEnergy also reject a null card, not just a quantity below 1.
+- removePokemon and removeEnergy throw IllegalArgumentException for a blank name, a null type, or a quantity below 1. The spec only described returning false when you don't own enough copies, and that rule is unchanged: the count is checked first, so a failed removal removes nothing.
+- countPokemon and countEnergy return 0 for a null or blank input instead of throwing.
+- toString prints "<owner>'s collection is empty." for an empty collection. Otherwise it lists Pokémon cards first, then Energy cards, as the spec says.
+
+### What changed in the LinkedChain
+
+Nothing. CardCollection only calls the chain's public methods (add, remove, count, size, isEmpty, toString). It uses two chains, one LinkedChain<PokemonCard> and one LinkedChain<EnergyCard>.
+
+### What doesn't work yet
+
+Nothing known. CardCollectionTest has 11 tests, including an empty collection and removing cards that aren't there, and all of them pass.
+
 ## Next Steps (Fernando)
 
 - Add menu options for the stretch goals once their classes exist: a "Trade" option that calls TradeHelper, and save on quit / load on startup using CollectionFile.
@@ -123,6 +141,8 @@ I haven't identified any issues with LinkedChain or LinkedChainTest from the tes
 | EnergyCardTest.java | Aryan | Wrote with GenAI assistance; ran and verified |
 | LinkedChain.java | Ash | Used instructor-provided starter code without modifying its implementation; reviewed and tested |
 | LinkedChainTest.java | Ash | Developed JUnit tests; ran and verified all 27 tests |
+| CardCollection.java | Golden | Wrote; Fernando moved the file into src/pokemontracker |
+| CardCollectionTest.java | Golden | Wrote; ran and verified |
 
 ## GenAI Usage Notes
 
